@@ -1,0 +1,8 @@
+# Ignorar archivos temporales de Excel y Word
+~$*
+*.tmp
+*.log
+
+# Ignorar carpetas de respaldos locales o datos masivos crudos
+/respaldos/
+/archivos_temporales/
