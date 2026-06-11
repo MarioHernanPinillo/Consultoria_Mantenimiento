@@ -1,0 +1,5 @@
+ESTRUCTURA DE INDICADORES DE CONFIABILIDAD
+=========================================
+1. MTBF (Tiempo Medio Entre Fallas)
+2. MTTR (Tiempo Medio de Reparación)
+3. Disponibilidad Operacional
