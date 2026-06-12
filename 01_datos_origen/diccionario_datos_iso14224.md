@@ -1,42 +1,72 @@
-# Arquitectura de Datos: Estructura Taxonómica (ISO 14224)
+# Arquitectura y Diccionario de Datos Estructural (ISO 14224)
 
-Este documento define el esquema relacional de las tablas base en Google Sheets que alimentarán la aplicación de AppSheet, garantizando la integridad de datos desde el nivel de planta hasta el componente.
+Este documento establece el plano de ingeniería de datos para las tablas base alojadas en Google Sheets. Su cumplimiento estricto previene la corrupción de datos relacionales en la aplicación móvil.
 
-## 1. Tabla: T01_Ubicaciones_Tecnicas (Nivel 3/4 ISO 14224)
-Registra las áreas físicas o procesos lógicos de la planta. Es la tabla padre de la jerarquía.
+## 1. Jerarquía Taxonómica Aplicada
+El modelo de datos absorbe los niveles sugeridos por la norma ISO 14224 para la gestión de datos de confiabilidad:
+* **Nivel 3 (Sistemas de Planta):** Ubicaciones Técnicas / Áreas Operacionales.
+* **Nivel 5 (Clase de Equipo):** Tipologías estandarizadas de activos.
+* **Nivel 6 (Unidad de Equipo):** El activo individual con su placa/TAG.
+* **Nivel 8 (Subsistema / Componente):** Elementos mantenibles con modos de falla propios.
 
-| Campo | Tipo de Datos | Llave (Key) | Regla de Validación / Origen |
-| :--- | :--- | :--- | :--- |
-| `ID_Ubicacion` | Texto (Alfanumérico) | **Llave Primaria** | Código único (Ej: `PL-NEI-01`) |
-| `Nombre_Ubicacion` | Texto | | Nombre descriptivo (Ej: Planta Inyección) |
-| `Criticidad_Planta` | Texto | | Alta / Media / Baja |
+---
 
-## 2. Tabla: T02_Clase_Equipo (Nivel 5 ISO 14224)
-Define los tipos genéricos de equipos industriales presentes en la organización.
+## 2. Especificación Técnica de Tablas
 
-| Campo | Tipo de Datos | Llave (Key) | Regla de Validación / Origen |
-| :--- | :--- | :--- | :--- |
-| `ID_Clase` | Texto | **Llave Primaria** | Código de clase (Ej: `EQ-TRA`, `EQ-MOT`) |
-| `Nombre_Clase` | Texto | | Transformadores, Motores, Bombas, etc. |
+### Tabla 1: T01_Ubicaciones_Tecnicas
+Establece las fronteras físicas y operacionales de los activos.
 
-## 3. Tabla: T03_Inventario_Activos (Nivel 6/7 ISO 14224)
-El maestro de activos. Contiene la ficha técnica e historial de cada equipo individual.
+* **ID_Ubicacion (Llave Primaria - PK):** * *Tipo:* Texto / Alfanumérico.
+  * *Formato:* Máximo 10 caracteres, en mayúsculas, usando guiones como separadores.
+  * *Ejemplo:* `PL-NEI-01` (Planta Neiva - Área 01).
+* **Nombre_Ubicacion:**
+  * *Tipo:* Texto.
+  * *Restricción:* No se permiten celdas vacías (*Not Null*).
+  * *Ejemplo:* `Estación de Bombeo Principal`.
+* **Criticidad_Contexto:**
+  * *Tipo:* Texto / Lista de validación.
+  * *Valores permitidos:* `ALTA`, `MEDIA`, `BAJA`.
 
-| Campo | Tipo de Datos | Llave (Key) | Regla de Validación / Origen |
-| :--- | :--- | :--- | :--- |
-| `ID_Activo` | Texto | **Llave Primaria** | Tag físico del equipo (Ej: `TRA-002`) |
-| `ID_Ubicacion` | Texto | *Llave Foránea* | Relación con `T01_Ubicaciones_Tecnicas` |
-| `ID_Clase` | Texto | *Llave Foránea* | Relación con `T02_Clase_Equipo` |
-| `Marca` | Texto | | Proveedor/Fabricante |
-| `Modelo` | Texto | | Especificación del fabricante |
-| `Fecha_Instalacion`| Date | | Formato `DD/MM/AAAA` |
-| `Estado_Operativo` | Texto | | Operativo / En Falla / En Reserva / Baja |
+### Tabla 2: T02_Clase_Equipo
+Catálogo maestro que estandariza las familias de activos para análisis estadísticos homogéneos.
 
-## 4. Tabla: T04_Componentes (Nivel 8 ISO 14224)
-Sub-elementos críticos asociados a un activo que poseen modos de falla propios (unidades de intercambio).
+* **ID_Clase (Llave Primaria - PK):**
+  * *Tipo:* Texto.
+  * *Formato:* Prefijo `EQ-` seguido de tres letras descriptivas.
+  * *Ejemplo:* `EQ-TRA` (Transformadores), `EQ-MOT` (Motores Eléctricos).
+* **Nombre_Clase:**
+  * *Tipo:* Texto.
+  * *Ejemplo:* `Transformador de Potencia`.
 
-| Campo | Tipo de Datos | Llave (Key) | Regla de Validación / Origen |
-| :--- | :--- | :--- | :--- |
-| `ID_Componente` | Texto | **Llave Primaria** | Código correlativo único |
-| `ID_Activo` | Texto | *Llave Foránea* | Relación con `T03_Inventario_Activos` |
-| `Nombre_Componente`| Texto | | Rodamiento, Devanado, Sello Mecánico, etc. |
+### Tabla 3: T03_Inventario_Activos
+El registro maestro de activos individuales. Almacena la hoja de vida técnica.
+
+* **ID_Activo (Llave Primaria - PK):**
+  * *Tipo:* Texto.
+  * *Restricción:* Alfanumérico único (TAG físico del equipo).
+  * *Ejemplo:* `TRA-002`.
+* **ID_Ubicacion (Llave Foránea - FK):**
+  * *Tipo:* Texto.
+  * *Restricción:* Debe existir previamente en `T01_Ubicaciones_Tecnicas`.
+* **ID_Clase (Llave Foránea - FK):**
+  * *Tipo:* Texto.
+  * *Restricción:* Debe existir previamente en `T02_Clase_Equipo`.
+* **Fecha_Instalacion:**
+  * *Tipo:* Fecha (Date).
+  * *Formato:* `AAAA-MM-DD`.
+* **Estado_Operativo:**
+  * *Tipo:* Texto / Lista de validación.
+  * *Valores permitidos:* `OPERATIVO`, `EN_FALLA`, `RESERVA`, `BAJA`.
+
+### Tabla 4: T04_Componentes_Mantenibles
+Unidades de intercambio críticas asociadas a un activo específico.
+
+* **ID_Componente (Llave Primaria - PK):**
+  * *Tipo:* Texto / Correlativo único.
+  * *Ejemplo:* `CMP-0081`.
+* **ID_Activo (Llave Foránea - FK):**
+  * *Tipo:* Texto.
+  * *Restricción:* Vinculado directamente a `T03_Inventario_Activos`.
+* **Nombre_Componente:**
+  * *Tipo:* Texto.
+  * *Ejemplo:* `Devanado Primario`, `Rodamiento Libre`, `Sello Mecánico`.
